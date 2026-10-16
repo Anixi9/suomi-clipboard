@@ -42,5 +42,14 @@
       "run_at": "document_start",
       "all_frames": false
     }
-  ]
+  ],
+    "browser_specific_settings": {
+    "gecko": {
+      "id": "suomi-clipboard@anixi9.dev",
+      "data_collection_permissions": {
+  "required": ["none"],
+  "optional": []
+}
+    }
+  }
 }

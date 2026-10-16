@@ -849,7 +849,8 @@
 
     overlay = document.createElement('div');
     overlay.id = 'zef-overlay';
-    overlay.innerHTML = panelHtml();
+    const parsedDoc = new DOMParser().parseFromString(panelHtml(), 'text/html');
+overlay.replaceChildren(...parsedDoc.body.childNodes);
     applySettings(overlay);
     document.documentElement.appendChild(overlay);
     wirePanel();
