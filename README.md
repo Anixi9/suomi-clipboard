@@ -13,6 +13,14 @@ A browser extension that replaces the OS file picker with a custom panel when at
 - **Privacy First**: No servers, no analytics. All data stored locally in IndexedDB.
 - **Customizable**: Hotkeys (Alt+V), themes, accent colors, opacity.
 
+##  Installation
+
+1. Download the latest `.zip` file from the [Releases](https://github.com/Anixi9/suomi-clipboard/releases) page.
+2. Open Firefox and go to `about:addons`.
+3. Click the gear icon ️ and select **Install Add-on From File...**.
+4. Choose the downloaded `.zip` archive.
+
+> **Note:** For Chrome/Edge/Opera support, a Manifest V3 version is currently in development.
 ---
 
 ## 🇷🇺 О расширении
@@ -27,10 +35,11 @@ A browser extension that replaces the OS file picker with a custom panel when at
 - Настраиваемые горячие клавиши, темы и прозрачность.
 
 ### Установка
-1. Скачай `.zip` из раздела [Releases](https://github.com/Anixi9/suomi-clipboard/releases).
-2. В Firefox открой `about:addons` → ️ → Установить дополнение из файла.
-3. Выбери скачанный архив.
+1. Скачайте `.zip` из раздела [Releases](https://github.com/Anixi9/suomi-clipboard/releases).
+2. В Firefox откройте `about:addons` → ️ → Установить дополнение из файла.
+3. Выберите скачанный архив.
 
+**Примечание:** Для поддержки Chrome/Edge/Opera в настоящее время разрабатывается версия Manifest V3.
 ## 🛠 Tech Stack
 Vanilla JS • Manifest V2 • IndexedDB • browser.* API
 
