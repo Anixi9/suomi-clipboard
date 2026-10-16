@@ -1,0 +1,46 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_name__",
+  "version": "1.5.1",
+  "default_locale": "en",
+  "description": "__MSG_description__",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zen-easy-files@local",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "clipboardRead",
+    "clipboardWrite",
+    "storage",
+    "unlimitedStorage",
+    "downloads",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "commands": {
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Alt+V"
+      },
+      "description": "__MSG_cmd_toggle__"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["panel.css"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}

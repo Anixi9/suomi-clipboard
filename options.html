@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suomi Clipboard — Settings</title>
+  <style>
+    :root {
+      color-scheme: dark light;
+      --bg: #1c1c20; --card: rgba(255, 255, 255, 0.06); --border: rgba(255, 255, 255, 0.14);
+      --text: #f4f4f6; --muted: rgba(255, 255, 255, 0.55); --field: rgba(255, 255, 255, 0.08);
+      --accent: #8ab4ff;
+    }
+    body.light {
+      --bg: #f2f2f6; --card: rgba(0, 0, 0, 0.04); --border: rgba(0, 0, 0, 0.14);
+      --text: #1b1b1f; --muted: rgba(0, 0, 0, 0.55); --field: rgba(0, 0, 0, 0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 40px 16px; background: var(--bg); color: var(--text);
+      font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", -apple-system, system-ui, sans-serif;
+    }
+    main { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 600; margin: 0 0 20px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+      padding: 18px 20px; margin-bottom: 14px;
+    }
+    label.title { display: block; font-weight: 600; margin-bottom: 10px; }
+    .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    select, input[type="text"], button {
+      font: inherit; color: var(--text); background: var(--field); border: 1px solid var(--border);
+      border-radius: 999px; padding: 7px 14px;
+    }
+    select { border-radius: 12px; min-width: 180px; }
+    button { cursor: pointer; }
+    button:hover { border-color: var(--accent); }
+    input[type="color"] { width: 48px; height: 32px; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: none; cursor: pointer; }
+    input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+    #hotkey-field { width: 190px; text-align: center; font-weight: 600; }
+    #hotkey-field.rec { border-color: var(--accent); }
+    .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+    #saved { color: var(--accent); font-size: 12px; min-height: 18px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 data-i18n="opt_title">Suomi Clipboard — Settings</h1>
+
+    <div class="card">
+      <label class="title" for="hotkey-field" data-i18n="opt_hotkey">Hotkey</label>
+      <div class="row">
+        <input type="text" id="hotkey-field" readonly value="Alt+V">
+        <button type="button" id="hotkey-record" data-i18n="opt_hotkey_record">Record</button>
+        <button type="button" id="hotkey-reset" data-i18n="opt_hotkey_reset">Reset</button>
+      </div>
+      <div class="note" id="hotkey-note" data-i18n="opt_hotkey_note"></div>
+    </div>
+
+    <div class="card">
+      <label class="title" for="theme" data-i18n="opt_theme">Theme</label>
+      <select id="theme">
+        <option value="system" data-i18n="opt_theme_system">System</option>
+        <option value="light" data-i18n="opt_theme_light">Light</option>
+        <option value="dark" data-i18n="opt_theme_dark">Dark</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <label class="title" for="accent" data-i18n="opt_accent">Accent color</label>
+      <div class="row"><input type="color" id="accent" value="#8ab4ff"></div>
+    </div>
+
+    <div class="card">
+      <label class="title" for="opacity" data-i18n="opt_opacity">Panel background opacity</label>
+      <div class="row"><input type="range" id="opacity" min="40" max="100" step="1" value="100"><span id="opacity-val">100%</span></div>
+    </div>
+
+    <div class="card">
+      <label class="title" for="lang" data-i18n="opt_lang">Language</label>
+      <select id="lang">
+        <option value="system" data-i18n="opt_lang_system">System</option>
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+
+    <div id="saved"></div>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>
