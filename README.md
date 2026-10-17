@@ -5,7 +5,7 @@
 
 A browser extension that replaces the OS file picker with a custom panel when attaching files. Inspired by Opera's Easy Files, rebuilt for Zen Browser and Firefox.
 
-## ✨ Features / Возможности
+## ✨ Features
 
 - **Smart File Picker**: Intercepts any "Attach" button and shows your own panel instead of Windows Explorer.
 - **Clipboard Screenshots**: Automatically captures screenshots from any app. Just press PrintScreen!
