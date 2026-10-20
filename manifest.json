@@ -1,13 +1,14 @@
 {
   "manifest_version": 2,
   "name": "__MSG_name__",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "default_locale": "en",
   "description": "__MSG_description__",
   "browser_specific_settings": {
     "gecko": {
-      "id": "zen-easy-files@local",
-      "strict_min_version": "109.0"
+      "id": "suomi-clipboard@anixi9.dev",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": { "required": ["none"], "optional": [] }
     }
   },
 "icons": {
@@ -47,14 +48,5 @@
       "run_at": "document_start",
       "all_frames": false
     }
-  ],
-    "browser_specific_settings": {
-    "gecko": {
-      "id": "suomi-clipboard@anixi9.dev",
-      "data_collection_permissions": {
-  "required": ["none"],
-  "optional": []
-}
-    }
-  }
+  ]
 }

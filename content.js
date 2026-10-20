@@ -11,6 +11,48 @@
   const STEP_WAIT_MS = 1800; // сколько ждём, пока на странице появится файл, после очередного способа вставки
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+  // ВРЕМЕННАЯ диагностика дублей скриншота ([ZEF-DUB]). После фикса поставить TRACE = false (тогда всё ниже молчит).
+  const TRACE = true;
+  const dub = (...a) => { if (TRACE) console.log('[ZEF-DUB]', ...a); };
+  // Наблюдаем 2,5 с после отправки: сколько событий paste/drop/input/change увидела страница и сколько превью появилось в DOM
+  function traceBegin(label) {
+    if (!TRACE) return;
+    const t0 = Date.now();
+    const stamp = () => '+' + (Date.now() - t0) + 'мс';
+    const cls = (n) => (n.getAttribute && n.getAttribute('class')) || '';
+    const desc = (n) => (n && n.tagName ? n.tagName.toLowerCase() + (n.id ? '#' + n.id : '') + (cls(n) ? '.' + cls(n).trim().split(/\s+/).slice(0, 2).join('.') : '') : String(n));
+    const blobSel = 'img[src^="blob:"], img[src^="data:"]';
+    const countImgs = () => Array.from(document.querySelectorAll(blobSel)).filter((i) => !i.closest('#zef-overlay, .zef-toast')).length;
+    const imgs0 = countImgs();
+    const cnt = { paste: 0, drop: 0, input: 0, change: 0, nodes: 0 };
+    const inOverlay = (e) => !!(e.target && e.target.closest && e.target.closest('#zef-overlay, .zef-toast'));
+    const onCap = (e) => {
+      if (inOverlay(e)) return;
+      cnt[e.type]++;
+      dub(stamp(), 'СОБЫТИЕ(capture)', e.type, '| trusted=' + e.isTrusted, '| target=' + desc(e.target), '| defaultPrevented=' + e.defaultPrevented);
+    };
+    const onBub = (e) => { if (!inOverlay(e)) dub(stamp(), 'СОБЫТИЕ(дошло до window после сайта)', e.type, '| defaultPrevented=' + e.defaultPrevented); };
+    const types = ['paste', 'drop', 'input', 'change'];
+    types.forEach((tp) => { window.addEventListener(tp, onCap, true); window.addEventListener(tp, onBub, false); });
+    const mo = new MutationObserver((list) => {
+      for (const m of list) {
+        for (const n of m.addedNodes) {
+          if (n.nodeType !== 1 || n.closest('#zef-overlay, .zef-toast')) continue;
+          const hasImg = n.tagName === 'IMG' ? /^(blob|data):/.test(n.src || '') : !!n.querySelector(blobSel);
+          if (hasImg || /preview|thumb|attach|chip|file/i.test(cls(n))) { cnt.nodes++; dub(stamp(), 'в DOM добавлен узел-превью №' + cnt.nodes, desc(n), hasImg ? '(есть blob/data img)' : ''); }
+        }
+      }
+    });
+    mo.observe(document, { childList: true, subtree: true });
+    dub('--- старт трассировки, файл(ы):', label, '| blob/data img в DOM до:', imgs0);
+    setTimeout(() => {
+      types.forEach((tp) => { window.removeEventListener(tp, onCap, true); window.removeEventListener(tp, onBub, false); });
+      mo.disconnect();
+      dub('--- ИТОГ за 2.5с: paste=' + cnt.paste, 'drop=' + cnt.drop, 'input=' + cnt.input, 'change=' + cnt.change,
+        '| узлов-превью добавлено=' + cnt.nodes, '| blob/data img в DOM: было', imgs0, '→ стало', countImgs());
+    }, 2500);
+  }
+
   // ---------------- настройки и локализация ----------------
   // storage.local.zefSettings = { theme, accent, opacity, lang, hotkeyCombo }; читаются заранее, чтобы openPanel оставался синхронным
   const MANIFEST_KEY = 'Alt+V';
@@ -141,6 +183,7 @@
       files.forEach((f) => dt.items.add(f));
       const ev = new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dt });
       if (!ev.clipboardData || !ev.clipboardData.files || !ev.clipboardData.files.length) return false;
+      dub('+1 вставка, способ=paste (синтетический ClipboardEvent на ' + el.tagName.toLowerCase() + '), файл=' + files.map((f) => f.name).join(','));
       el.dispatchEvent(ev);
       return true;
     } catch (e) { log('paste strategy failed:', e); return false; }
@@ -155,7 +198,13 @@
       await send({ action: 'suppressClipboard' });          // чтобы фон не принял эту картинку за новый скриншот
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': files[0] })]);
       el.focus({ preventScroll: true });
-      return !!document.execCommand('paste');
+      dub('+1 вставка, способ=ctrlv (execCommand paste, настоящая вставка из системного буфера), файл=' + files[0].name);
+      // Firefox: execCommand('paste') возвращает false даже при успешной вставке (событие paste при этом доходит до сайта).
+      // Поэтому возврат команды не используем: сам вызов с картинкой в буфере на сфокусированном редакторе = вставка состоялась.
+      // Если что-то пошло не так (буфер/фокус) — исключение уйдёт в catch → false → цепочка честно пойдёт к следующему способу.
+      const pasteRes = document.execCommand('paste');
+      dub('ctrlv: execCommand вернул', pasteRes, '→ считаем вставку состоявшейся (return true)');
+      return true;
     } catch (e) { log('trusted paste failed:', e); return false; }
   }
 
@@ -183,6 +232,7 @@
       log('Qwen: setInputFiles, события в page-контексте: input =', okInput, ', change =', okChange);
       if (okInput && okChange) return true;
     }
+    dub('+1 вставка, способ=input.files (+ событие input, затем change), файл=' + list.map((f) => f.name).join(','));
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
@@ -198,6 +248,7 @@
       const r = target.getBoundingClientRect();
       const x = r.left + r.width / 2;
       const y = r.top + r.height / 2;
+      dub('+1 вставка, способ=drop на редактор, файл=' + files.map((f) => f.name).join(','));
       ['dragenter', 'dragover', 'drop'].forEach((t) => target.dispatchEvent(dragEvent(t, dt, x, y)));
       return true;
     } catch (e) { log('drop strategy failed:', e); return false; }
@@ -225,6 +276,7 @@
       const zr = zone.getBoundingClientRect();
       const zx = zr.left + zr.width / 2;
       const zy = zr.top + zr.height / 2;
+      dub('+1 вставка, способ=drop на зону сброса, файл=' + files.map((f) => f.name).join(','));
       zone.dispatchEvent(dragEvent('dragover', dt, zx, zy));
       zone.dispatchEvent(dragEvent('drop', dt, zx, zy));
       return true;
@@ -613,10 +665,35 @@
     } catch (e) { /* не критично */ }
   }
 
+  // Подпись файла по СОДЕРЖИМОМУ (не по имени): тип + размер + FNV-1a по первым и последним 64 КБ
+  async function fileSig(f) {
+    const n = f.size;
+    let h = 0x811c9dc5;
+    const eat = (u) => { for (let i = 0; i < u.length; i++) { h ^= u[i]; h = Math.imul(h, 0x01000193) >>> 0; } };
+    eat(new Uint8Array(await f.slice(0, 65536).arrayBuffer()));
+    if (n > 131072) eat(new Uint8Array(await f.slice(n - 65536).arrayBuffer()));
+    return (f.type || '') + '|' + n + '|' + h.toString(16);
+  }
+
+  // Дедупликация: файл с той же подписью, уже прикреплённый в текущей сессии панели (ctx), второй раз не вставляем
   async function attachFiles(files) {
     if (attaching) return;
     attaching = true;
-    try { await doAttach(files); } finally { attaching = false; }
+    try {
+      const seen = ctx ? (ctx.sigs || (ctx.sigs = new Set())) : null;
+      const local = new Set();
+      const fresh = [];
+      for (const f of files) {
+        let sig = null;
+        try { sig = await fileSig(f); } catch (e) { console.warn('[ZEF] fileSig:', e); }
+        if (sig && (local.has(sig) || (seen && seen.has(sig)))) { log('дубль пропущен (то же содержимое):', f.name, sig); continue; }
+        if (sig) local.add(sig);
+        fresh.push({ f, sig });
+      }
+      if (!fresh.length) return;
+      const ok = await doAttach(fresh.map((x) => x.f));
+      if (ok && seen) fresh.forEach((x) => { if (x.sig) seen.add(x.sig); });   // помечаем только реально отправленные: повтор после неудачи не блокируется
+    } finally { attaching = false; }
   }
 
   // Пробуем способы по очереди; следующий — только если файл так и не появился на странице.
@@ -693,6 +770,27 @@
     }
     if (!steps.length) throw new Error('на странице нет поля загрузки. Поставь курсор в поле ввода или нажми скрепку');
 
+    // Скриншоты/картинки по хоткею: fire-and-forget. Берём ПЕРВЫЙ способ, который смог отправить файл, и сразу выходим:
+    // без ожидания и опроса DOM (у contenteditable-редакторов подтверждения нет → раньше были зависание, ложная ошибка и дубли
+    // от запуска следующего способа поверх уже сработавшего).
+    if (kind === 'image' && !c.input) {
+      let sent = null;
+      dub('порядок шагов:', steps.map((s) => s.id).join(' → '));
+      traceBegin(names);
+      for (const st of steps) {
+        let res = false;
+        dub('шаг start:', st.id);
+        try { res = await st.run(); } catch (e) { console.warn('[ZEF] способ не удался:', st.label, e); }
+        dub('шаг end:', st.id, '→ вернул', res);
+        if (res) { sent = st; break; }
+      }
+      closePanel();
+      if (sent) {
+        console.log('[ZEF] отправлено без ожидания подтверждения:', sent.label, names);
+      } else console.warn('[ZEF] ни один способ не смог отправить файл:', names);
+      return !!sent;
+    }
+
     const matcher = makeMatcher(files, anchor);
     gMatcher = matcher;
     // Защита от дублей: перед следующим способом проверяем, не появился ли файл «с опозданием» после предыдущего.
@@ -727,8 +825,8 @@
     if (used) {
       log('attached:', used.label, names);
       closePanel();
-      toast('✅ ' + t('toast_attached') + ': ' + names);
-      return;
+      console.log('[ZEF] прикреплено:', names);
+      return true;
     }
     // Запоздавший чип мог появиться после всех шагов (например, race между paste и inputFiles)
     if (useScan && dispatchedAny && scanAttached(matcher, baseline, blobBaseline)) {
@@ -736,19 +834,15 @@
       used = lastDispatched;
       saveStrategy(kind, used.id);
       closePanel();
-      toast('✅ ' + t('toast_attached') + ': ' + names);
-      return;
+      console.log('[ZEF] прикреплено (поздний скан):', names);
+      return true;
     }
     if (!dispatchedAny) throw lastErr || new Error('на странице нет подходящего поля загрузки');
-    if (isGemini && kind === 'doc' && !c.input && !gFlags.overlay && !gFlags.input) {
-      closePanel();
-      log('Gemini: нет ни поля загрузки, ни области сброса');
-      toast(t('error_generic'), 4500);
-      return;
-    }
+    // Ошибок пользователю не показываем: только диагностика в консоль
     closePanel();
-    log('файл не появился на странице ни одним способом');
-    toast(t('error_generic'), 4500);
+    if (isGemini && kind === 'doc' && !c.input && !gFlags.overlay && !gFlags.input) console.warn('[ZEF] Gemini: нет ни поля загрузки, ни области сброса');
+    else console.warn('[ZEF] файл не появился на странице ни одним способом');
+    return false;
   }
 
   // Системный диалог выбора файла (кнопка «Перетащите файл или нажмите»)
@@ -760,11 +854,11 @@
       const gEditor = c.focusEl && c.focusEl.isConnected && isEditable(c.focusEl) ? c.focusEl : null;
       const r = await activateGeminiUpload(gEditor, true);
       log('Gemini: dropzone: plus =', !!r.plus, '| item =', !!r.item, '| inputClicked =', r.inputClicked);
-      if (!r.inputClicked) toast(t('error_generic'), 4500);
+      if (!r.inputClicked) console.warn('[ZEF] Gemini: диалог выбора файла не открылся');
       return;
     }
     let input = c.input || rankInputs([], c.focusEl, false)[0];   // без файлов: берём самое «широкое» поле (любые файлы)
-    if (!input) { log('поле загрузки на странице не найдено'); toast(t('error_generic'), 4500); return; }
+    if (!input) { console.warn('[ZEF] поле загрузки на странице не найдено'); return; }
     let alreadyOpened = false;
     if (isQwen) {
       // Qwen: «+» → «Загрузить файл» выставляет состояние и вешает обработчик; пункт меню сам открывает диалог
@@ -788,7 +882,7 @@
     if (poll) await send({ action: 'pollClipboard' });
     const res = await send({ action: 'list' });
     if (!overlay) return;
-    if (!res || !res.clips) { log('нет связи с фоновой страницей расширения'); toast(t('error_generic'), 4500); return; }
+    if (!res || !res.clips) { console.warn('[ZEF] нет связи с фоновой страницей расширения'); return; }
     data = res;
     lastSig = res.sig || '';
     renderPanel();
@@ -889,7 +983,7 @@ overlay.replaceChildren(...parsedDoc.body.childNodes);
     q('#zef-refresh-btn').addEventListener('click', async (e) => {
       e.stopPropagation();
       await refresh(true);
-      toast('🔄 ' + t('toast_refreshed'), 1200);
+      console.log('[ZEF] список обновлён');
     });
 
     q('#zef-clear-btn').addEventListener('click', async (e) => {
@@ -897,7 +991,7 @@ overlay.replaceChildren(...parsedDoc.body.childNodes);
       await send({ action: 'clear' });
       data = { clips: [], hist: [], downloads: [] };
       renderPanel();
-      toast('🗑️ ' + t('toast_cleared'), 1500);
+      console.log('[ZEF] список очищен');
     });
 
     dz.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openNativeDialog(); });
@@ -1022,8 +1116,7 @@ overlay.replaceChildren(...parsedDoc.body.childNodes);
         const file = await materialize(item, source);
         await attachFiles([file]);
       } catch (err) {
-        log('attach error:', err);
-        toast(t('error_generic'), 4500);
+        console.warn('[ZEF] attach error:', err);   // пользователю ничего не показываем
       } finally { el.classList.remove('zef-busy'); }
     });
     return el;
