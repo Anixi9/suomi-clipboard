@@ -1,5 +1,5 @@
 # Suomi Clipboard 📋
-
+[![Firefox Add-on](https://img.shields.io/badge/Firefox-Suomi%20Clipboard-orange?logo=firefox&logoColor=white)](https://addons.mozilla.org/firefox/addon/suomi-clipboard/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-orange?logo=firefox)](https://addons.mozilla.org/)
 
