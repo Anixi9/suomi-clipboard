@@ -13,14 +13,14 @@ A browser extension that replaces the OS file picker with a custom panel when at
 - **Privacy First**: No servers, no analytics. All data stored locally in IndexedDB.
 - **Customizable**: Hotkeys (Alt+V), themes, accent colors, opacity.
 
-##  Installation
+## 🛠 Installation
 
-1. Download the latest `.zip` file from the [Releases](https://github.com/Anixi9/suomi-clipboard/releases) page.
-2. Open Firefox and go to `about:addons`.
-3. Click the gear icon ️ and select **Install Add-on From File...**.
-4. Choose the downloaded `.zip` archive.
+1. Go to the [Suomi Clipboard page on Firefox Add-ons](https://addons.mozilla.org/firefox/addon/suomi-clipboard/).
+2. Click **Add to Firefox**.
+3. Done — the panel is ready. Press **Alt+V** in any chat/form, or click a site's attach button.
 
-> **Note:** For Chrome/Edge/Opera support, a Manifest V3 version is currently in development.
+> The extension updates automatically from the Add-ons store. The `.zip` in [Releases](../../releases) is the signed source archive for developers only — installing unsigned zips from file is blocked by Firefox by design.
+> For Chrome/Edge/Opera a Manifest V3 build is in development.
 ---
 
 ## 🇷🇺 О расширении
@@ -35,11 +35,13 @@ A browser extension that replaces the OS file picker with a custom panel when at
 - Настраиваемые горячие клавиши, темы и прозрачность.
 
 ### Установка
-1. Скачайте `.zip` из раздела [Releases](https://github.com/Anixi9/suomi-clipboard/releases).
-2. В Firefox откройте `about:addons` → ️ → Установить дополнение из файла.
-3. Выберите скачанный архив.
 
-**Примечание:** Для поддержки Chrome/Edge/Opera в настоящее время разрабатывается версия Manifest V3.
+1. Откройте [страницу Suomi Clipboard в Firefox Add-ons](https://addons.mozilla.org/firefox/addon/suomi-clipboard/).
+2. Нажмите **«Добавить в Firefox»**.
+3. Готово — панель работает. Жмите **Alt+V** в любом чате/форме или кликайте по кнопке прикрепления сайта.
+
+> Обновления приходят автоматически из магазина. `.zip` в [Releases](../../releases) — это архив исходников для разработчиков; установка неподписанных zip из файла заблокирована Firefox намеренно.
+> Для Chrome/Edge/Opera готовится версия на Manifest V3.
 ## 🛠 Tech Stack
 Vanilla JS • Manifest V2 • IndexedDB • browser.* API
 
